@@ -8,45 +8,31 @@ resource "azurerm_virtual_network" "app_network" {
   location            = local.resource_location
   resource_group_name = azurerm_resource_group.appgrp.name
   address_space       = local.virtual_network.address_prefixes
- 
-  subnet {
-    name             = "websunet01"
-    address_prefixes = [local.subnet_address_prefix[0]]
-  }
-
-  subnet {
-    name             = "appsunet01"
-    address_prefixes = [local.subnet_address_prefix[1]]
-  }
   
 }
 
-resource "azurerm_storage_account" "appstore33449988" {
-  name                     = "appstore33449988"
-  resource_group_name      = azurerm_resource_group.appgrp.name
-  location                 = local.resource_location
-  account_tier             = "Standard"
-  account_replication_type = "LRS" 
-  depends_on = [ 
-    azurerm_resource_group.appgrp 
-    ]
+resource "azurerm_subnet" "websubnet01" {
+  name                 = local.subnets[0].name
+  resource_group_name  = azurerm_resource_group.appgrp.name
+  virtual_network_name = azurerm_virtual_network.app_network.name
+  address_prefixes     = local.subnets[0].address_prefixes
 }
 
-resource "azurerm_storage_container" "scripts" {
-  name                  = "scripts"
-  storage_account_id    = azurerm_storage_account.appstore33449988.id
-  depends_on = [
-    azurerm_storage_account.appstore33449988
-    ]
-  }
+resource "azurerm_subnet" "appsubnet01" {
+  name                 = local.subnets[1].name
+  resource_group_name  = azurerm_resource_group.appgrp.name
+  virtual_network_name = azurerm_virtual_network.app_network.name
+  address_prefixes     = local.subnets[1].address_prefixes
+}
 
-resource "azurerm_storage_blob" "script01" {
-  name                   = "script01.ps1"
-  storage_account_name   = azurerm_storage_account.appstore33449988.name
-  storage_container_name = azurerm_storage_container.scripts.name
-  type                   = "Block"
-  source                 = "script01.ps1"
-  depends_on = [ 
-    azurerm_storage_container.scripts
-   ]
+resource "azurerm_network_interface" "webinterface01" {
+  name                = "webinterface01"
+  location            = local.resource_location
+  resource_group_name = azurerm_resource_group.appgrp.name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = azurerm_subnet.websubnet01.id
+    private_ip_address_allocation = "Dynamic"
+  }
 }
