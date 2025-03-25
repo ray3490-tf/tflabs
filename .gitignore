@@ -1,0 +1,8 @@
+terraform.exe
+**/.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*tfplan*
+old.txt
+azurerm.tf
