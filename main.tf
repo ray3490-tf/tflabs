@@ -38,6 +38,18 @@ resource "azurerm_network_interface" "webinterface01" {
   }
 }
 
+resource "azurerm_network_interface" "webinterface02" {
+  name                = "webinterface02"
+  location            = local.resource_location
+  resource_group_name = azurerm_resource_group.appgrp.name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = azurerm_subnet.appsubnet01.id
+    private_ip_address_allocation = "Dynamic"
+    }
+}
+
 resource "azurerm_public_ip" "webip01" {
   name                = "webip01"
   resource_group_name = azurerm_resource_group.appgrp.name
@@ -83,6 +95,7 @@ resource "azurerm_windows_virtual_machine" "webvm01" {
   vm_agent_platform_updates_enabled = true
   network_interface_ids = [
     azurerm_network_interface.webinterface01.id,
+    azurerm_network_interface.webinterface02.id
   ]
 
   os_disk {
@@ -96,4 +109,21 @@ resource "azurerm_windows_virtual_machine" "webvm01" {
     sku       = "2022-Datacenter"
     version   = "latest"
   }
+}
+
+resource "azurerm_managed_disk" "datadisk01" {
+  name                 = "datadisk01"
+  location             = local.resource_location
+  resource_group_name  = azurerm_resource_group.appgrp.name
+  storage_account_type = "Standard_LRS"
+  create_option        = "Empty"
+  disk_size_gb         = "4"
+ 
+}
+
+resource "azurerm_virtual_machine_data_disk_attachment" "datadisk01_webvm01" {
+  managed_disk_id    = azurerm_managed_disk.datadisk01.id
+  virtual_machine_id = azurerm_windows_virtual_machine.webvm01.id
+  lun                = "0"
+  caching            = "ReadWrite"
 }
